@@ -1,0 +1,40 @@
+git add .gitignore
+
+# Ignore local environment settings
+.env
+.env.local
+*.env
+
+# Ignore sensitive keys and secrets
+*.key
+*.pem
+*.crt
+
+# Ignore vector and cache files
+vector_index.json
+*.faiss
+*.npy
+*.cache
+*.db
+
+# Ignore logs
+*.log
+logs/
+
+# Node.js dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Ignore compiled output
+dist/
+build/
+
+# VSCode and system files
+.vscode/
+.DS_Store
+
+# Render deploy artifacts
+render.yaml
+render-build.sh
+git push

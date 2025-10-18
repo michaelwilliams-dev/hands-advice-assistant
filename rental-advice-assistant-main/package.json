@@ -1,0 +1,21 @@
+{
+  "name": "accounting-assistant-pro",
+  "version": "1.0.0",
+  "description": "Accounting Assistant PRO backend using vector_store.js + Accountant Report generation",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "buffer": "^6.0.3",
+    "cors": "^2.8.5",
+    "docx": "^8.4.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.11",
+    "openai": "^4.24.0",
+    "pdf-lib": "^1.17.1"
+  }
+}

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rental Assistant PRO</title>
+  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f9fc;
+      padding: 40px;
+      max-width: 700px;
+      margin: auto;
+      color: #333;
+    }
+    h2 { text-align: center; color: #4e65ac; }
+    label {
+      font-weight: bold;
+      margin-top: 10px;
+      display: block;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    textarea { resize: vertical; min-height: 100px; }
+    button {
+      background-color: #4e65ac;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover { background-color: #3c5093; }
+    pre {
+      background: #f4f4f4;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      white-space: pre-wrap;
+    }
+    .terms-box {
+      font-size: 14px;
+      margin-top: 15px;
+      margin-bottom: 10px;
+    }
+    .terms-box a { color: #4e65ac; text-decoration: underline; }
+
+    /* ✅ NEW: Bold numbered section headings inside the output */
+    #response {
+      line-height: 1.5;
+    }
+    #response strong {
+      font-weight: bold;
+      color: #4e65ac; /* AIVS blue */
+    }
+
+    /* ✅ NEW: Databank timestamp style */
+    #indexTimestamp, #budgetNotice {
+      text-align: right;
+      font-size: 0.9em;
+      color: #666;
+    }
+    #indexTimestamp { margin-top: -5px; }
+    #budgetNotice { margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <h2>Rental Assistant PRO</h2>
+  <p>🕒 ISO Timestamp: <span id="iso-timestamp"></span></p>
+
+  <div id="indexTimestamp">🗂️ Databank Last Updated: 2025-10-20T11:30:00Z</div>
+
+
+  <label for="clarification">Question or topic</label>
+  <textarea id="clarification"
+    placeholder="e.g. Explain VAT reverse charge mechanism for construction contractors"></textarea>
+
+  <label for="email">Your Email</label>
+  <input type="email" id="email" placeholder="you@example.com" />
+
+  <label for="managerEmail">Manager Email (or file copy)</label>
+  <input type="email" id="managerEmail" placeholder="manager@firm.co.uk" />
+
+  <label for="clientEmail">Audit Email</label>
+  <input type="email" id="clientEmail" placeholder="client@theirbusiness.co.uk" />
+
+  <!-- ✅ Terms & Conditions checkbox (pre-ticked) -->
+  <div class="terms-box">
+    <label>
+      <input type="checkbox" id="termsCheckbox" checked />
+      I have read and agree to the
+      <a href="https://www.aivs.uk/ai-disclosure" target="_blank">Terms and Conditions</a>.
+    </label>
+  </div>
+
+  <button id="generate">Generate Rental Assistant PRO Report</button>
+
+  <h3>Report Output</h3>
+  <pre id="response"></pre>
+
+  <script src="script.js?v=2025-10-16T11:45:00Z"></script>
+
+  <!-- ✅ Terms checkbox control -->
+  <script>
+    const termsCheckbox = document.getElementById("termsCheckbox");
+    const generateBtn = document.getElementById("generate");
+    termsCheckbox.addEventListener("change", () => {
+      generateBtn.disabled = !termsCheckbox.checked;
+    });
+  </script>
+
+  <!-- ✅ iframe auto-height broadcaster -->
+  <script>
+    function sendHeight() {
+      window.parent.postMessage(
+        { type: "resizeIframe", height: document.body.scrollHeight },
+        "*"
+      );
+    }
+    window.addEventListener("load", sendHeight);
+    new ResizeObserver(sendHeight).observe(document.body);
+  </script>
+
+  <!-- ✅ Optional: automatic backend date fetch (if /index-date route exists) -->
+  <script>
+    async function loadIndexTimestamp() {
+      try {
+        const res = await fetch("/index-date");
+        const data = await res.json();
+        document.getElementById("indexTimestamp").textContent =
+          `🗂️ Databank Last Updated: ${data.lastUpdated}`;
+      } catch {
+        // fallback: leave static date if backend route missing
+      }
+    }
+    window.addEventListener("load", loadIndexTimestamp);
+  </script>
+</body>
+</html>
