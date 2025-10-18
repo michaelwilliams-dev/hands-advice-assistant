@@ -1,10 +1,10 @@
-// public/script.js — Rental Assistant PRO
-// ISO Timestamp: 🕒 2025-10-14T10:45:00Z
-// ✅ Connects to rental-assistant-pro backend via same-origin /ask
+// public/script.js — Health & Safety Assistant
+// ISO Timestamp: 🕒 2025-10-18T14:45:00Z
+// ✅ Connects to health-safety-assistant backend via same-origin /ask
 // ✅ Sends all three email fields (user, manager, optional)
-// ✅ Displays accountant report or clear error message
+// ✅ Displays H&S report or clear error message
 
-console.log("CLIENT JS VERSION = v2025-10-14T10:45:00Z (Accounting Assistant PRO)");
+console.log("CLIENT JS VERSION = v2025-10-18T14:45:00Z (Health & Safety Assistant)");
 
 document.addEventListener("DOMContentLoaded", () => {
   const $ = (id) => document.getElementById(id);
@@ -44,7 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     console.log("📤 [CLIENT /ask] Sending payload", payload);
-    output.textContent = "⏳ Semantic Search then generating Rental Agent Report – please wait.";
+    output.textContent =
+      "⏳ Semantic search then generating Health & Safety Report – please wait.";
 
     try {
       // ✅ same-origin endpoint
@@ -62,7 +63,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // ======== BEGIN CHANGED LINES ========
       if (data?.answer) {
         output.innerHTML = data.answer;
       } else if (data?.reportText) {
@@ -71,8 +71,6 @@ document.addEventListener("DOMContentLoaded", () => {
         output.innerHTML = "⚠️ No report returned. Please check backend logs.";
         console.warn("⚠️ Unexpected response:", data);
       }
-      // ======== END CHANGED LINES ========
-
     } catch (err) {
       console.error("❌ Network or fetch error:", err);
       output.textContent =
