@@ -1,10 +1,10 @@
 <!-- index.html -->
-<!-- ISO Timestamp: 🕒 2025-10-10T10:00:00Z (Rental Assistant PRO temporary viewer) -->
+<!-- ISO Timestamp: 🕒 2025-10-10T10:00:00Z (Health & Safety Assistant temporary viewer) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Rental Assistant PRO</title>
+  <title>Health & Safety Assistant</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css" />
   <style>
@@ -16,14 +16,14 @@
 </head>
 <body>
   <div>
-    <h2>Rental Assistant PRO</h2>
+    <h2>Health & Safety Assistant</h2>
     <p>🕒 ISO Timestamp: <span id="iso-timestamp"></span></p>
 
-    <input type="text" id="query" placeholder="Enter a rental question (e.g. tenant deposit dispute)" />
+    <input type="text" id="query" placeholder="Enter a health and safety question (e.g. fire risk assessment requirements)" />
     <input type="email" id="email" placeholder="Your email (optional)" />
     <input type="text" id="firstName" placeholder="First name (optional)" />
     <input type="text" id="lastName" placeholder="Last name (optional)" />
-    <button id="generate">Generate Rental Assistant PRO Report</button>
+    <button id="generate">Generate Health & Safety Report</button>
 
     <h3>Result</h3>
     <pre id="output"></pre>
@@ -49,7 +49,7 @@
         return;
       }
 
-      output.textContent = "⏳ Generating Rental Agent Report...";
+      output.textContent = "⏳ Generating Health & Safety Report...";
       try {
         const res = await fetch("/ask", {
           method: "POST",
