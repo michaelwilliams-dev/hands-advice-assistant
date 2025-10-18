@@ -1,0 +1,27 @@
+# Query: app
+# ContextLines: 1
+
+6 results - 2 files
+
+~/Documents/AIVS/clients_folders/PropertyFormula_2025-07-27/backend/server.js:
+  11  config();
+  12: const app = express();
+  13  const PORT = process.env.PORT || 3002;
+  14  
+  15: app.use(cors());
+  16: app.use(express.json());
+  17  
+
+  50  // POST /api/blog-draft
+  51: app.post('/api/blog-draft', async (req, res) => {
+  		console.log("🔁 Received blog draft request");
+  52    const { topic } = req.body;
+
+  90  
+  91: app.listen(PORT, () => {
+  92    console.log(`🚀 Blog assistant running at http://localhost:${PORT}`);
+
+~/Documents/AIVS/clients_folders/PropertyFormula_2025-07-27/frontend/script.js:
+  13        method: 'POST',
+  14:       headers: { 'Content-Type': 'application/json' },
+  15        body: JSON.stringify({
