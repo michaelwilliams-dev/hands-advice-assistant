@@ -1,6 +1,6 @@
-// server.js — Rental Assistant PRO (pure-JS version)
-// ISO Timestamp: 🕒 2025-10-15T02:10:00Z
-// ✅ Added FAISS chunk count to footer (PDF + Word) — no other changes
+// server.js — Health & Safety Assistant (pure-JS version)
+// ISO Timestamp: 🕒 2025-10-18T15:00:00Z
+// ✅ Added FAISS chunk count to footer (PDF + Word) — no other logic changes
 
 import express from "express";
 import bodyParser from "body-parser";
@@ -56,24 +56,24 @@ async function queryFaissIndex(question) {
 }
 
 /* ----------------------- Report Generator ----------------------------- */
-async function generateRentalReport(query) {
+async function generateHSReport(query) {
   const { joined, count } = await queryFaissIndex(query);
   let context = joined;
   if (context.length > 50000) context = context.slice(0, 50000);
 
   const prompt = `
-You are a qualified UK rental property agent preparing a formal internal compliance report.
-Use HM Government housing, tenancy, landlord, and letting-agent guidance to produce a structured, professional summary.
+You are a qualified UK health and safety consultant preparing a formal internal compliance report.
+Use HM Government workplace safety, risk management, and regulatory guidance to produce a structured, professional summary.
 
 Question: "${query}"
 
 Structure:
 1. Query
-2. Who is affected (tenant, landlord, managing agent, guarantor, etc.)
+2. Who is affected (employer, employee, contractor, visitor, etc.)
 3. Relevant legislation and government guidance
 4. Evidence or documentation required
-5. Common non-compliance issues or refusals
-6. Key UK Government and professional body references (e.g. GOV.UK, Shelter, NRLA, RICS, ARLA, Trading Standards)
+5. Common non-compliance issues or enforcement actions
+6. Key UK Government and professional body references (e.g. HSE, Gov.uk, HSENI, ORR, IOSH, RoSPA)
 7. Practical wrap-up and recommended next steps
 
 Context:
@@ -116,10 +116,10 @@ ${context}`.trim();
   const regRand = `${dateSeed}-${randomPart}`;
 
   const footer = `
-  This report was prepared using the AIVS FAISS-indexed UK housing and tenancy guidance base,
+  This report was prepared using the AIVS FAISS-indexed UK health and safety guidance base,
   derived entirely from verified UK Government and professional publications.
   It is provided for internal compliance and advisory purposes only and should not
-  be relied upon as a substitute for professional legal or property advice.
+  be relied upon as a substitute for professional legal or safety advice.
   
   ISO 42001 Fairness Verification: ${fairnessResult}
   Reg. No. AIVS/UK/${regRand}/${count}
@@ -182,7 +182,7 @@ async function buildPdfBufferStructured({ fullName, ts, question, reportText }) 
     }
   };
 
-  draw("Rental Assistant PRO Report", margin, y, fsTitle, fontBold);
+  draw("Health & Safety Assistant Report", margin, y, fsTitle, fontBold);
   y -= fsTitle * 1.4;
   para(`Prepared for: ${fullName || "N/A"}`, margin);
   para(`Timestamp (UK): ${ts}`, margin);
@@ -203,7 +203,7 @@ app.post("/ask", async (req, res) => {
 
   try {
     const ts = new Date().toISOString();
-    const reportText = await generateRentalReport(question);
+    const reportText = await generateHSReport(question);
     const pdfBuf = await buildPdfBufferStructured({
       fullName: email,
       ts,
@@ -217,7 +217,7 @@ app.post("/ask", async (req, res) => {
       new Paragraph({
         children: [
           new TextRun({
-            text: "RENTAL ASSISTANT PRO REPORT",
+            text: "HEALTH & SAFETY ASSISTANT REPORT",
             bold: true,
             size: 32,
           }),
@@ -309,10 +309,10 @@ app.post("/ask", async (req, res) => {
     const regRand = `${dateSeed}-${randomPart}`;
 
     const footerText = `
-    This report was prepared using the AIVS FAISS-indexed UK housing and tenancy guidance base,
+    This report was prepared using the AIVS FAISS-indexed UK health and safety guidance base,
     derived entirely from verified UK Government and professional publications.
     It is provided for internal compliance and advisory purposes only and should not
-    be relied upon as a substitute for professional legal or property advice.
+    be relied upon as a substitute for professional legal or safety advice.
 
 Reg. No. AIVS/UK/${regRand}/${globalIndex ? globalIndex.length : 0}
 © AIVS Software Limited 2025 — All rights reserved.`;
@@ -351,7 +351,7 @@ Reg. No. AIVS/UK/${regRand}/${globalIndex ? globalIndex.length : 0}
                 { Email: managerEmail },
                 { Email: clientEmail },
               ].filter((r) => r.Email),
-              Subject: "Your AI Rental Report",
+              Subject: "Your AI Health & Safety Report",
               TextPart: reportText,
               HTMLPart: reportText
                 .split("\n")
@@ -389,10 +389,10 @@ Reg. No. AIVS/UK/${regRand}/${globalIndex ? globalIndex.length : 0}
 
 /* ---------------------------- Serve Front-End ---------------------------- */
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "rental.html"));
+  res.sendFile(path.join(__dirname, "public", "health-safety.html"));
 });
 
 /* ------------------------------ Port Binding ----------------------------- */
 app.listen(process.env.PORT || 3002, "0.0.0.0", () => {
-  console.log(`🟢 Rental Assistant PRO running on port ${process.env.PORT || 3002}`);
+  console.log(`🟢 Health & Safety Assistant running on port ${process.env.PORT || 3002}`);
 });
