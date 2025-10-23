@@ -8,8 +8,8 @@
 import fs from "fs";
 import { OpenAI } from "openai";
 
-const INDEX_PATH = "/mnt/data/data/vector.jsonl";   // ← use your text-based JSONL file
-const META_PATH  = "/mnt/data/data/chunks_metadata.jsonl";
+const INDEX_PATH = "/mnt/data/dvector.json";   // ← use your text-based JSONL file
+const META_PATH  = "/mnt/data/chunks_metadata.jsonl";
 const CHUNK_LIMIT = 50000;
 
 console.log("🟢 vector_store.js (chunk-safe JSONL) using", INDEX_PATH);
