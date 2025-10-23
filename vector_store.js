@@ -8,8 +8,8 @@
 import fs from "fs";
 import { OpenAI } from "openai";
 
-const INDEX_PATH = "/mnt/data/vector.index";
-const META_PATH  = "/mnt/data/chunks_metadata.final.jsonl";
+const INDEX_PATH = "/mnt/data/data/vector.index";
+const META_PATH  = "/mnt/data/data/chunks_metadata.jsonl";
 const CHUNK_LIMIT = 50000; // number of vectors per load batch
 
 console.log("🟢 vector_store.js (chunk-safe) using", INDEX_PATH);
