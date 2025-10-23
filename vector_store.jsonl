@@ -1,4 +1,4 @@
-// vector_store.js
+// vector_store.jsonl
 // ISO Timestamp: 🕒 2025-10-13T11:15:00Z
 // CHANGELOG:
 // • Loads vector.index incrementally in small chunks (avoids RangeError)
