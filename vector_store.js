@@ -1,34 +1,64 @@
-// vector_store.js — Health & Safety Assistant (FAISS-binary compatible)
-// ISO Timestamp: 🕒 2025-10-23T13:45:00Z
+// vector_store.js
+// ISO Timestamp: 🕒 2025-10-13T11:15:00Z
 // CHANGELOG:
-// • Reads compiled FAISS binary index directly (via faiss-node)
-// • Retains metadata + OpenAI semantic-search pipeline
-// • Fully compatible with Health & Safety backend structure
+// • Loads vector.index incrementally in small chunks (avoids RangeError)
+// • Fully compatible with Accountant / H&S Assistant backend
+// • Uses OpenAI embeddings + dot-product semantic search (no faiss-node)
 
 import fs from "fs";
-import faiss from "faiss-node";
 import { OpenAI } from "openai";
 
-const INDEX_PATH = "/mnt/data/data/vector.index";
+const INDEX_PATH = "/mnt/data/data/vector.jsonl";   // ← use your text-based JSONL file
 const META_PATH  = "/mnt/data/data/chunks_metadata.jsonl";
+const CHUNK_LIMIT = 50000;
 
-console.log("🟢 vector_store.js (FAISS-binary) using", INDEX_PATH);
+console.log("🟢 vector_store.js (chunk-safe JSONL) using", INDEX_PATH);
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_APIKEY || process.env.OPENAI_API_KEY,
 });
 
 /* ---------------------------------------------------------------------- */
-/*  LOAD FAISS INDEX                                                      */
+/*  LOAD INDEX (reads JSONL embeddings)                                   */
 /* ---------------------------------------------------------------------- */
-export async function loadIndex() {
-  if (!fs.existsSync(INDEX_PATH)) {
-    throw new Error(`❌ Index file missing at ${INDEX_PATH}`);
+export async function loadIndex(limit = CHUNK_LIMIT) {
+  console.log(`📦 Loading vector index in chunks (limit ${limit})...`);
+  const fd = await fs.promises.open(INDEX_PATH, "r");
+  const stream = fd.createReadStream({ encoding: "utf8" });
+
+  let buffer = "";
+  const vectors = [];
+  let processed = 0;
+
+  for await (const chunk of stream) {
+    buffer += chunk;
+    const parts = buffer.split("\n");
+    buffer = parts.pop(); // carry over incomplete line
+    for (const line of parts) {
+      if (!line.trim()) continue;
+      try {
+        const obj = JSON.parse(line);
+        if (obj.embedding) {
+          vectors.push(obj);
+          processed++;
+          if (processed % 1000 === 0)
+            console.log(`  → ${processed} vectors`);
+          if (vectors.length >= limit) {
+            console.log(`🛑 Chunk limit reached (${limit})`);
+            await fd.close();
+            console.log(`✅ Loaded ${vectors.length} vectors (chunk-safe).`);
+            return vectors;
+          }
+        }
+      } catch {
+        /* ignore malformed line */
+      }
+    }
   }
-  console.log("📦 Reading FAISS index:", INDEX_PATH);
-  const index = faiss.readIndex(INDEX_PATH);
-  console.log(`✅ Loaded ${index.ntotal} vectors of dim ${index.d}`);
-  return index;
+
+  await fd.close();
+  console.log(`✅ Loaded ${vectors.length} vectors (chunk-safe).`);
+  return vectors;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -48,7 +78,7 @@ export async function loadMetadata(limit = 10) {
 }
 
 /* ---------------------------------------------------------------------- */
-/*  SEARCH INDEX (semantic retrieval using OpenAI + FAISS)                */
+/*  SEARCH INDEX (semantic retrieval)                                     */
 /* ---------------------------------------------------------------------- */
 export async function searchIndex(rawQuery, index) {
   const query = (typeof rawQuery === "string" ? rawQuery : String(rawQuery || "")).trim();
@@ -58,21 +88,24 @@ export async function searchIndex(rawQuery, index) {
   }
 
   console.log("🔍 [AIVS Search] Query:", query);
-  const embeddingResponse = await openai.embeddings.create({
+  const response = await openai.embeddings.create({
     model: "text-embedding-3-small",
     input: [query],
   });
-  const q = embeddingResponse.data[0].embedding;
 
-  // Convert FAISS results to a simple ranked array
-  const k = Math.min(10, index.ntotal);
-  const { distances, labels } = index.search(q, k);
+  const q = response.data[0].embedding;
+  const scores = index.map((v) => ({
+    ...v,
+    score: dotProduct(q, v.embedding),
+  }));
 
-  const results = [];
-  for (let i = 0; i < labels.length; i++) {
-    results.push({ id: labels[i], score: 1 - distances[i] });
-  }
+  return scores.sort((a, b) => b.score - a.score).slice(0, 10);
+}
 
-  console.log(`🔎 Retrieved ${results.length} nearest neighbours.`);
-  return results;
+/* ---------------------------------------------------------------------- */
+/*  DOT PRODUCT                                                           */
+/* ---------------------------------------------------------------------- */
+function dotProduct(a, b) {
+  if (!a || !b || a.length !== b.length) return 0;
+  return a.reduce((sum, val, i) => sum + val * b[i], 0);
 }
