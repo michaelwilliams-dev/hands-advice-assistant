@@ -8,7 +8,7 @@
 import fs from "fs";
 import { OpenAI } from "openai";
 
-const INDEX_PATH = "/mnt/data/dvector.json";   // ← use your text-based JSONL file
+const INDEX_PATH = "/mnt/data/vector.json";   // ← use your text-based JSONL file
 const META_PATH  = "/mnt/data/chunks_metadata.jsonl";
 const CHUNK_LIMIT = 50000;
 
