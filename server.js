@@ -81,7 +81,15 @@ ${context}`.trim();
 
   const completion = await openai.chat.completions.create({
     model: "gpt-5",
-    messages: [{ role: "user", content: prompt }],
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are the Health & Safety Manager. You must never offer, suggest, or mention producing a report, template, or document. \
+    Only provide factual Health & Safety guidance drawn from UK HSE, CDM, COSHH, and RIDDOR sources.",
+      },
+      { role: "user", content: prompt },
+    ],
   });
 
   let text = completion.choices[0].message.content.trim();
