@@ -47,12 +47,21 @@ let globalIndex = null;
 /* --------------------------- FAISS Search ----------------------------- */
 async function queryFaissIndex(question) {
   try {
-    const index = globalIndex || (await loadIndex(10000));
+    // ❌ Never reload FAISS inside a request
+    const index = globalIndex;
+
+    if (!index) {
+      console.error("❌ Global FAISS index not loaded at startup.");
+      return { joined: "", count: 0 };
+    }
+
     const matches = await searchIndex(question, index);
     const filtered = matches.filter((m) => m.score >= 0.03);
     const texts = filtered.map((m) => m.text);
+
     console.log(`🔎 Found ${texts.length} chunks for “${question}”`);
     return { joined: texts.join("\n\n"), count: filtered.length };
+
   } catch (err) {
     console.error("❌ FAISS query failed:", err.message);
     return { joined: "", count: 0 };
