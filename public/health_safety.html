@@ -1,3 +1,4 @@
+<!-- ISO Timestamp: 2025-11-16T09:30:00Z -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,7 +58,7 @@
     }
     #response strong {
       font-weight: bold;
-      color: #4e65ac; /* AIVS blue */
+      color: #4e65ac;
     }
 
     #indexTimestamp, #budgetNotice {
@@ -67,11 +68,32 @@
     }
     #indexTimestamp { margin-top: -5px; }
     #budgetNotice { margin-bottom: 20px; }
+
+    /* --- Clear button -------------------------------------------- */
+    #clearResultsBtn {
+      background:#4e65ac;
+      color:#fff;
+      border:none;
+      border-radius:0;
+      padding:14px 28px;
+      font-size:17px;
+      font-weight:700;
+      cursor:pointer;
+      margin:25px 0 15px auto;
+      display:none;
+    }
+    #clearResultsBtn:hover { background:#3c5399; }
   </style>
 </head>
+
 <body>
+
+  <!-- Visible ISO timestamp at top -->
+  <p style="text-align:right; font-size:0.9rem; color:#666;">
+    🕒 ISO Timestamp: <span id="iso-timestamp"></span>
+  </p>
+
   <h2>Health & Safety Assistant</h2>
-  <p>🕒 ISO Timestamp: <span id="iso-timestamp"></span></p>
 
   <div id="indexTimestamp">🗂️ Databank Last Updated: 2025-10-20T11:30:00Z</div>
 
@@ -97,6 +119,7 @@
   </div>
 
   <button id="generate">Generate Health & Safety Report</button>
+  <button id="clearResultsBtn">Clear Results</button>
 
   <h3>Report Output</h3>
   <pre id="response"></pre>
@@ -129,9 +152,7 @@
         const data = await res.json();
         document.getElementById("indexTimestamp").textContent =
           `🗂️ Databank Last Updated: ${data.lastUpdated}`;
-      } catch {
-        // fallback: leave static date if backend route missing
-      }
+      } catch {}
     }
     window.addEventListener("load", loadIndexTimestamp);
 
@@ -140,5 +161,19 @@
       document.getElementById("iso-timestamp").textContent = iso;
     });
   </script>
+
+  <!-- Clear button logic (correct location) -->
+  <script>
+    const clearBtn = document.getElementById("clearResultsBtn");
+    const responseBox = document.getElementById("response");
+    const clarificationField = document.getElementById("clarification");
+
+    clearBtn.addEventListener("click", () => {
+      responseBox.textContent = "";
+      clarificationField.value = "";
+      clearBtn.style.display = "none";
+    });
+  </script>
+
 </body>
 </html>
