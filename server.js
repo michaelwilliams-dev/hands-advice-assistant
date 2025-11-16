@@ -75,7 +75,7 @@ Context:
 ${context}`.trim();
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4.1",
     messages: [
       {
         role: "system",
@@ -93,7 +93,7 @@ Only provide factual Health & Safety guidance drawn from UK HSE, CDM, COSHH, and
   let fairnessResult = "";
   try {
     const fairnessCheck = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-4.1",
       messages: [
         {
           role: "system",
