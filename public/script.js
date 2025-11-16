@@ -1,8 +1,5 @@
 // public/script.js — Health & Safety Assistant
 // ISO Timestamp: 🕒 2025-10-18T14:45:00Z
-// ✅ Connects to health-safety-assistant backend via same-origin /ask
-// ✅ Sends all three email fields (user, manager, optional)
-// ✅ Displays H&S report or clear error message
 
 console.log("CLIENT JS VERSION = v2025-10-18T14:45:00Z (Health & Safety Assistant)");
 
@@ -25,6 +22,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   generateBtn.addEventListener("click", async () => {
+
+    // --- UI Preparing State (added) ---
+    generateBtn.disabled = true;
+    generateBtn.textContent = "Preparing report…";
+    document.getElementById("clearResultsBtn").style.display = "none";
+
     const question = clarificationInput?.value?.trim() || "";
     const email = emailInput?.value?.trim() || "";
     const managerEmail = managerInput?.value?.trim() || "";
@@ -32,6 +35,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!question) {
       output.textContent = "❌ Please enter a question or problem description.";
+      generateBtn.disabled = false;
+      generateBtn.textContent = "Generate Health & Safety Report";
       return;
     }
 
@@ -44,6 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     console.log("📤 [CLIENT /ask] Sending payload", payload);
+
     output.textContent =
       "⏳ Semantic search then generating Health & Safety Report – please wait.";
 
@@ -59,25 +65,36 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) {
         output.textContent = `❌ Server error: ${data?.error || res.status}`;
         console.error("❌ Backend error:", data);
-        return;
-      }
-
-      if (data?.answer) {
+      } else if (data?.answer) {
         output.innerHTML = data.answer;
-        document.getElementById("clearResultsBtn").style.display = "block"; // ⭐ ADDED
       } else if (data?.reportText) {
         output.innerHTML = data.reportText;
-        document.getElementById("clearResultsBtn").style.display = "block"; // ⭐ ADDED
       } else {
         output.innerHTML = "⚠️ No report returned. Please check backend logs.";
-        document.getElementById("clearResultsBtn").style.display = "block"; // ⭐ ADDED
         console.warn("⚠️ Unexpected response:", data);
       }
+
+      // Show clear button after rendering
+      document.getElementById("clearResultsBtn").style.display = "block";
 
     } catch (err) {
       console.error("❌ Network or fetch error:", err);
       output.textContent =
         "❌ Failed to contact backend: " + (err.message || String(err));
     }
+
+    // --- Restore button after completion (added) ---
+    generateBtn.disabled = false;
+    generateBtn.textContent = "Generate Health & Safety Report";
   });
+
+  // --- Clear Results Button Logic (added) ---
+  const clearBtn = document.getElementById("clearResultsBtn");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      output.textContent = "";
+      clarificationInput.value = "";
+      clearBtn.style.display = "none";
+    });
+  }
 });
