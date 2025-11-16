@@ -48,7 +48,6 @@ document.addEventListener("DOMContentLoaded", () => {
       "⏳ Semantic search then generating Health & Safety Report – please wait.";
 
     try {
-      // ✅ same-origin endpoint
       const res = await fetch("/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -65,12 +64,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (data?.answer) {
         output.innerHTML = data.answer;
+        document.getElementById("clearResultsBtn").style.display = "block"; // ⭐ ADDED
       } else if (data?.reportText) {
         output.innerHTML = data.reportText;
+        document.getElementById("clearResultsBtn").style.display = "block"; // ⭐ ADDED
       } else {
         output.innerHTML = "⚠️ No report returned. Please check backend logs.";
+        document.getElementById("clearResultsBtn").style.display = "block"; // ⭐ ADDED
         console.warn("⚠️ Unexpected response:", data);
       }
+
     } catch (err) {
       console.error("❌ Network or fetch error:", err);
       output.textContent =
