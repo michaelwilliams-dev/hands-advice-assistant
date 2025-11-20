@@ -1,6 +1,6 @@
 /**
  * AIVS Health & Safety Assistant · Backend
- * ISO Timestamp: 2025-11-20T19:00:00Z
+ * ISO Timestamp: 2025-11-16T15:30:00Z
  * Author: AIVS Software Limited
  */
 
@@ -12,6 +12,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fetch from "node-fetch";
 import { PDFDocument, StandardFonts } from "pdf-lib";
+import { Document, Packer, Paragraph, TextRun } from "docx";
 import { Buffer } from "buffer";
 import { loadIndex, searchIndex } from "./vector_store.js";
 import cors from "cors";
@@ -44,32 +45,25 @@ let globalIndex = null;
 /* --------------------------- FAISS Search ----------------------------- */
 async function queryFaissIndex(question) {
   try {
+    // Prevent reloads inside the /ask route
     const index = globalIndex;
+
     if (!index) {
       console.error("❌ Global FAISS index not loaded at startup.");
       return { joined: "", count: 0 };
     }
+
     const matches = await searchIndex(question, index);
     const filtered = matches.filter((m) => m.score >= 0.03);
     const texts = filtered.map((m) => m.text);
+
     console.log(`🔎 Found ${texts.length} chunks for “${question}”`);
     return { joined: texts.join("\n\n"), count: filtered.length };
+
   } catch (err) {
     console.error("❌ FAISS query failed:", err.message);
     return { joined: "", count: 0 };
   }
-}
-
-/* ===================== PATCH: Strip formatting for PDF ===================== */
-function stripFormatting(rawText) {
-  return rawText
-    .replace(/<strong>/gi, '')
-    .replace(/<\/strong>/gi, '')
-    .replace(/<br\s*\/?\s*>/gi, '')
-    .replace(/<hr\s*\/?\s*>/gi, '')
-    .replace(/<<.*?>>/g, '')
-    .replace(/<[^>]*>/g, '') // catch remaining HTML
-    .trim();
 }
 
 /* ----------------------- Report Generator ----------------------------- */
@@ -99,8 +93,16 @@ ${context}`.trim();
     ],
   });
 
+  /* ----------- Structured Accounting-Style Formatting ---------------- */
   let raw = completion.choices[0].message.content.trim();
-  let text = stripFormatting(raw);
+
+  let text = raw
+    .replace(/^#{1,6}\s*/gm, "")                      // remove markdown headers
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // bold
+    .replace(/\n-{3,}\n/g, "<hr>")                    // horizontal rules
+    .replace(/\n{2,}/g, "\n<br><br>")                 // spacing
+    .replace(/^\s*[-•]\s+/gm, "• ")                   // bullet cleanup
+    .replace(/^(\d+)\.\s+/gm, "<strong>$1.</strong> "); // numbered steps bold
 
   /* ----------------------- ISO 42001 Fairness Check --------------------- */
   let fairnessResult = "";
@@ -130,15 +132,16 @@ ${context}`.trim();
   const regRand = `${dateSeed}-${randomPart}`;
 
   const footer = `
-This report was prepared using the AIVS FAISS-indexed UK health and safety guidance base,
-derived entirely from verified UK Government and professional publications.
-It is provided for internal compliance and advisory purposes only.
+  This report was prepared using the AIVS FAISS-indexed UK health and safety guidance base,
+  derived entirely from verified UK Government and professional publications.
+  It is provided for internal compliance and advisory purposes only.
 
-ISO 42001 Fairness Verification: ${fairnessResult}
-Reg. No. AIVS/UK/${regRand}/${count}
-© AIVS Software Limited 2025 — All rights reserved.`;
+  ISO 42001 Fairness Verification: ${fairnessResult}
+  Reg. No. AIVS/UK/${regRand}/${count}
+  © AIVS Software Limited 2025 — All rights reserved.
+  `;
 
-  return `${text}\n\n${footer}`;
+  return `${text}\n<br><br>${footer}`;
 }
 
 /* --------------------------- PDF Helper ------------------------------- */
