@@ -125,7 +125,6 @@ return a.reduce((sum, val, i) => sum + val * b[i], 0);
 
 import express from "express";
 import bodyParser from "body-parser";
-import OpenAI from "openai";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
