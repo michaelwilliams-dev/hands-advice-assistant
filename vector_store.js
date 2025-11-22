@@ -4,15 +4,22 @@
 // • Loads vector.index incrementally in small chunks (avoids RangeError)
 // • Fully compatible with Accountant / H&S Assistant backend
 // • Uses OpenAI embeddings + dot-product semantic search (no faiss-node)
+// vector_store.jsonl
+// ISO Timestamp: 🕒 2025-10-13T11:15:00Z
+// CHANGELOG:
+// • Loads vector.index incrementally in small chunks (avoids RangeError)
+// • Fully compatible with Accountant / H&S Assistant backend
+// • Uses OpenAI embeddings + dot-product semantic search (no faiss-node)
 
 import fs from "fs";
 import { OpenAI } from "openai";
 
-const INDEX_PATH = "/mnt/data/data/vector.index";   // ← use your text-based JSONL file
-const META_PATH  = "/mnt/data/data/chunks_metadata.jsonl";
 const INDEX_PATH = "/mnt/data/vector.index";   // ← use your text-based JSONL file
 const META_PATH  = "/mnt/data/chunks_metadata.jsonl";
 const CHUNK_LIMIT = 50000;
+
+console.log("🟢 vector_store.js (chunk-safe JSONL) using", INDEX_PATH);
+
 
 console.log("🟢 vector_store.js (chunk-safe JSONL) using", INDEX_PATH);
 
