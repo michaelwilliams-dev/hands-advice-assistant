@@ -396,10 +396,3 @@ app.get("/", (req, res) => {
 app.listen(process.env.PORT || 3002, "0.0.0.0", () => {
   console.log(`🟢 Health & Safety Assistant running on port ${process.env.PORT || 3002}`);
 });
-0 commit comments
-Comments
-0
- (0)
-Comment
-You're not receiving notifications from this thread.
-Change model from gpt-5 to gpt-4.1 · michaelwilliams-dev/hands-advice-assistant@29b0fe7
