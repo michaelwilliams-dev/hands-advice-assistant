@@ -1,5 +1,5 @@
 /**
- * AIVS Health & Safety Assistant · Backend
+ * AIVS Health & Safety Assistant ·  Backend
  * ISO Timestamp: 2025-11-16T15:30:00Z
  * Author: AIVS Software Limited
  * Notes:
