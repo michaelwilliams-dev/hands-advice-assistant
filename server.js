@@ -76,20 +76,34 @@ async function generateHSReport(query) {
   if (context.length > 50000) context = context.slice(0, 50000);
 
   const prompt = `
-You are a qualified UK health and safety consultant preparing a formal internal compliance report.
-Use HM Government workplace safety, risk management, and regulatory guidance to produce a structured, professional summary.
+You are a qualified UK Health & Safety consultant.
+Use HSWA 1974, MHSWR 1999, CDM 2015, COSHH, RIDDOR 2013, and Workplace (Health, Safety and Welfare) Regulations 1992 where relevant.
+Write clearly in UK professional English.
+Do NOT use Markdown (**text**, ### headings).
+Do NOT use asterisks for emphasis.
+
 Question: "${query}"
+
+Structure:
+1. Summary of incident or issue
+2. Relevant legal duties (HSWA, MHSWR, CDM, etc.)
+3. Hazard identification
+4. Risk evaluation (likelihood + severity)
+5. Immediate actions required
+6. Longer-term control measures
+7. Reporting duties (e.g., RIDDOR)
+8. Practical wrap-up
+
 Context:
-${context}`.trim();
+${context}
+`.trim();
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-4.1",
+    model: "gpt-4o",
     messages: [
       {
         role: "system",
         content:
-          "You are the Health & Safety Manager. You must never offer, suggest, or mention producing a report, template, or document. \
-Only provide factual Health & Safety guidance drawn from UK HSE, CDM, COSHH, and RIDDOR sources.",
           "You are the Health & Safety Manager. Only provide factual guidance drawn from UK HSE, CDM, COSHH, and RIDDOR sources.",
       },
       { role: "user", content: prompt },
@@ -97,8 +111,12 @@ Only provide factual Health & Safety guidance drawn from UK HSE, CDM, COSHH, and
   });
 
   let text = completion.choices[0].message.content.trim();
-  /* ----------- Structured Accounting-Style Formatting ---------------- */
-  let raw = completion.choices[0].message.content.trim();
+
+  /* ----------- Structured Formatting Cleanup ---------------- */
+  text = text.replace(/8\)\s*Appendix[\s\S]*$/gi, "").trim();
+
+  return text;
+}
 
   // --- ISO 42001 fairness check ---
   let text = raw
