@@ -89,29 +89,32 @@ async function queryFaissIndex(question) {
 }
 
 /* ----------------------- Report Generator ----------------------------- */
-async function generateAccountantReport(query) {
+async function generateHSReport(query) {
   const { joined, count } = await queryFaissIndex(query);
   let context = joined.slice(0, 50000);
 
   const prompt = `
-You are a qualified UK accountant preparing a formal internal compliance report.
-Write clearly in UK professional English.
-Do NOT use Markdown (**text**, ### headings).
-Do NOT use asterisks for emphasis.
-
-Question: "${query}"
-
-Structure:
-1. Query
-2. Who can reclaim or is affected
-3. Guidance
-4. Evidence required
-5. Common blockers or refusals
-6. Key HMRC manual references
-7. Practical wrap-up
-
-Context:
-${context}`.trim();
+  You are a qualified UK Health & Safety consultant.
+  Use HSWA 1974, MHSWR 1999, CDM 2015, COSHH, RIDDOR 2013, and Workplace (Health, Safety and Welfare) Regulations 1992 where relevant.
+  Write clearly in UK professional English.
+  Do NOT use Markdown (**text**, ### headings).
+  Do NOT use asterisks for emphasis.
+  
+  Question: "${query}"
+  
+  Structure:
+  1. Summary of incident or issue
+  2. Relevant legal duties (HSWA, MHSWR, CDM, etc.)
+  3. Hazard identification
+  4. Risk evaluation (likelihood + severity)
+  5. Immediate actions required
+  6. Longer-term control measures
+  7. Reporting duties (e.g., RIDDOR)
+  8. Practical wrap-up
+  
+  Context:
+  ${context}
+  `;
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o",
@@ -141,7 +144,8 @@ ${context}`.trim();
 
   const footer = `
 
-This report was prepared using the AIVS FAISS-indexed HMRC knowledge base.
+This report was prepared using the AIVS FAISS-indexed UK Health & Safety knowledge base.
+Internal advisory use only.
 ISO 42001 Fairness: ${fairness}
 Reg. No. AIVS/UK/${reg}/${count}
 © AIVS Software Limited 2025`;
@@ -223,7 +227,7 @@ app.post("/ask", verifyOrigin, async (req, res) => {
     const ts = new Date().toISOString();
     const dateForDocx = ts.split("T")[0].split("-").reverse().join("-");
 
-    const reportText = await generateAccountantReport(question);
+    const reportText = await generateHSReport(question);
     const pdfBuf = await buildPdfBufferStructured({
       fullName: email,
       ts,
@@ -392,7 +396,7 @@ Reg. No. AIVS/UK/${reg2}/${globalIndex ? globalIndex.length : 0}
                 { Email: managerEmail },
                 { Email: clientEmail }
               ].filter((r) => r.Email),
-              Subject: "Your AI Accountant Report",
+              Subject: "Your AI Health & Safety Report",
               TextPart: reportText,
               HTMLPart: reportText.split("\n").map((l) => `<p>${l}</p>`).join(""),
               Attachments: [
@@ -404,7 +408,7 @@ Reg. No. AIVS/UK/${reg2}/${globalIndex ? globalIndex.length : 0}
                 {
                   ContentType:
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                  Filename: `accounting-assist-${dateForDocx}.docx`,
+					Filename: `health-safety-report-${dateForDocx}.docx`,
                   Base64Content: docBuf.toString("base64")
                 }
               ]
@@ -429,9 +433,9 @@ Reg. No. AIVS/UK/${reg2}/${globalIndex ? globalIndex.length : 0}
    FRONTEND ROUTE + SERVER START
    --------------------------------------------- */
 app.get("/", (req, res) =>
-  res.sendFile(path.join(__dirname, "public", "accountant.html"))
+	res.sendFile(path.join(__dirname, "public", "health_safety.html"))
 );
 
 app.listen(Number(PORT), "0.0.0.0", () =>
-  console.log(`🟢 Accountant Assistant PRO running on port ${PORT}`)
+	console.log(`🟢 Health & Safety Assistant running on port ${PORT}`)
 );
