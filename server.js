@@ -47,12 +47,21 @@ let globalIndex = null;
 /* --------------------------- FAISS Search ----------------------------- */
 async function queryFaissIndex(question) {
   try {
-    const index = globalIndex || (await loadIndex(10000));
+    const index = globalIndex;  // << NEVER reload inside /ask
+
+    // 🚨 Safety check: FAISS index not yet loaded (user clicked too early)
+    if (!index || index.length === 0) {
+      console.error("❌ GlobalIndex not ready — still loading at startup");
+      return { joined: "", count: 0 };
+    }
+
     const matches = await searchIndex(question, index);
     const filtered = matches.filter((m) => m.score >= 0.03);
     const texts = filtered.map((m) => m.text);
+
     console.log(`🔎 Found ${texts.length} chunks for “${question}”`);
     return { joined: texts.join("\n\n"), count: filtered.length };
+
   } catch (err) {
     console.error("❌ FAISS query failed:", err.message);
     return { joined: "", count: 0 };
@@ -73,7 +82,7 @@ Context:
 ${context}`.trim();
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-5",
+    
     model: "gpt-4.1",
     messages: [
       {
@@ -92,7 +101,7 @@ Only provide factual Health & Safety guidance drawn from UK HSE, CDM, COSHH, and
   let fairnessResult = "";
   try {
     const fairnessCheck = await openai.chat.completions.create({
-      model: "gpt-5",
+      
       model: "gpt-4.1",
       messages: [
         {
