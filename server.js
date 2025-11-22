@@ -136,7 +136,7 @@ ${context}
           role: "system",
           content:
             "You are an ISO 42001 fairness auditor. Identify any gender, age, racial, or cultural bias in the text below. Respond 'No bias detected' if compliant.",
-            "You are an ISO 42001 fairness auditor. Identify any bias. Respond 'No bias detected' if compliant.",
+          
         },
         { role: "user", content: text },
       ],
