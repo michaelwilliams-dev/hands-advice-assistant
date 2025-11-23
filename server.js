@@ -1,8 +1,8 @@
 /**
  * AIVS Health & Safety Assistant · Backend (Pure JS)
- * ISO Timestamp: 2025-11-23T15:00:00Z
- * Clean headings, clean bullets, FAISS, PDF, Word, Email
- * Fairness audit removed; heading logic aligned with Accountant Assistant PRO
+ * ISO Timestamp: 2025-11-23T15:30:00Z
+ * Clean headings, bullets, FAISS, PDF, Word, Email
+ * Fairness audit removed. Heading sizes fixed. Outline disabled.
  */
 
 import express from "express";
@@ -52,7 +52,7 @@ function verifyOrigin(req, res, next) {
 }
 
 /* --------------------------------------------------------------------- */
-/* PATHS + SERVER                                                        */
+/* PATH + SERVER                                                         */
 /* --------------------------------------------------------------------- */
 
 const PORT = process.env.PORT || 10000;
@@ -106,7 +106,7 @@ async function queryFaissIndex(question) {
 }
 
 /* --------------------------------------------------------------------- */
-/* REPORT GENERATOR (ACCOUNTING-STYLE STRUCTURE)                         */
+/* REPORT GENERATOR                                                      */
 /* --------------------------------------------------------------------- */
 
 async function generateHSReport(question) {
@@ -116,9 +116,8 @@ async function generateHSReport(question) {
   const prompt = `
 You are a qualified UK health & safety consultant preparing a structured internal compliance report.
 Use HSE guidance, RIDDOR 2013, CDM 2015, COSHH, and the Workplace (Health, Safety and Welfare) Regulations.
-
 Write in clear, formal UK English.
-Do NOT use Markdown (**text**, ### headings, bullet syntax).
+Do NOT use Markdown (**text**, ### headings, or bullet syntax).
 Use numbered sections following this structure:
 
 1. Context
@@ -143,14 +142,16 @@ ${context}`.trim();
 
   const now = new Date();
   const seed = `${String(now.getFullYear()).slice(2)}${String(
-    now.getMonth() + 1
-  ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+    now.getMonth() + 1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
   const rand = Math.floor(1000 + Math.random() * 9000);
 
+  /* NEW SAVING CLAUSE */
   const footer = `
-This report was prepared using the AIVS FAISS-indexed UK Health & Safety knowledge base. 
-It is for internal guidance only and must not be treated as legal, regulatory, or professional safety advice. 
-Any decisions taken remain the responsibility of the organisation, and all statutory duties under UK Health & Safety legislation continue to appl
+This report was prepared using the AIVS FAISS-indexed UK Health & Safety knowledge base.  
+It is provided for internal guidance only and must not be relied upon as a substitute for legal,  
+regulatory, or professional safety advice. All statutory duties under UK Health & Safety  
+legislation remain the responsibility of the organisation at all times.
+
 Reg. No. AIVS/UK/${seed}-${rand}/${count}
 © AIVS Software Limited 2025`;
 
@@ -212,7 +213,6 @@ app.post("/ask", verifyOrigin, async (req, res) => {
     const reportText = await generateHSReport(question);
     const pdfBuf = await buildPdf({ fullName: email, ts, question, reportText });
 
-    /* CLEAN MARKDOWN (safety) */
     const cleanedText = (reportText || "")
       .replace(/\*\*/g, "")
       .replace(/\*/g, "")
@@ -233,7 +233,8 @@ app.post("/ask", verifyOrigin, async (req, res) => {
           new TextRun({
             text: "HEALTH & SAFETY ASSISTANT REPORT",
             bold: true,
-            size: 32
+            size: 32,
+            color: "4e65ac"
           })
         ]
       })
@@ -248,13 +249,14 @@ app.post("/ask", verifyOrigin, async (req, res) => {
           new TextRun({
             text: `Generated ${ts}`,
             bold: true,
-            size: 24
+            size: 24,
+            color: "4e65ac"
           })
         ]
       })
     );
 
-    /* BODY PARSING – MIRRORING ACCOUNTANT LOGIC, WITH 28PT HEADINGS */
+    /* BODY LOOP */
     for (const raw of lines) {
       let t = raw.trim();
       if (!t) {
@@ -262,16 +264,18 @@ app.post("/ask", verifyOrigin, async (req, res) => {
         continue;
       }
 
-      /* MAIN SECTION HEADINGS e.g. "1. Context" */
+      /* NUMBERED HEADINGS — 28pt BLUE (with outline disabled) */
       if (/^\d+\.\s+/.test(t)) {
         docParagraphs.push(
           new Paragraph({
+            outlineLevel: undefined,   // disable Word auto-outline
+            numbering: undefined,
             spacing: { before: 200, after: 120 },
             children: [
               new TextRun({
                 text: t,
                 bold: true,
-                size: 28,       // ← at least 28, as requested
+                size: 28,
                 color: "4e65ac"
               })
             ]
@@ -280,16 +284,19 @@ app.post("/ask", verifyOrigin, async (req, res) => {
         continue;
       }
 
-      /* UPPERCASE SUBHEADINGS (RARE – e.g. "FURTHER ACTIONS:") */
-      if (/^[A-Z][A-Za-z\s]+:$/.test(t)) {
+      /* SUBHEADINGS — also 28pt BLUE */
+      if (/^[A-Z][A-Za-z\s]+:?$/.test(t)) {
         docParagraphs.push(
           new Paragraph({
+            outlineLevel: undefined,
+            numbering: undefined,
             spacing: { before: 120, after: 80 },
             children: [
               new TextRun({
                 text: t.replace(/:$/, ""),
                 bold: true,
-                size: 24
+                size: 28,
+                color: "4e65ac"
               })
             ]
           })
@@ -304,7 +311,12 @@ app.post("/ask", verifyOrigin, async (req, res) => {
           new Paragraph({
             spacing: { after: 60 },
             indent: { left: 680, hanging: 360 },
-            children: [new TextRun({ text: bulletText, size: 22 })]
+            children: [
+              new TextRun({
+                text: bulletText,
+                size: 22
+              })
+            ]
           })
         );
         continue;
@@ -314,7 +326,12 @@ app.post("/ask", verifyOrigin, async (req, res) => {
       docParagraphs.push(
         new Paragraph({
           spacing: { after: 120 },
-          children: [new TextRun({ text: t, size: 22 })]
+          children: [
+            new TextRun({
+              text: t,
+              size: 22
+            })
+          ]
         })
       );
     }
@@ -334,9 +351,10 @@ app.post("/ask", verifyOrigin, async (req, res) => {
     );
 
     const doc = new Document({ sections: [{ children: docParagraphs }] });
-    const docBuf = await Packer.toBuffer(doc);
+    const docBuf =
+      await Packer.toBuffer(doc);
 
-    /* EMAIL SEND */
+    /* EMAIL */
     await fetch("https://api.mailjet.com/v3.1/send", {
       method: "POST",
       headers: {
