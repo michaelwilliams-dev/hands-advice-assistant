@@ -336,19 +336,7 @@ app.post("/ask", verifyOrigin, async (req, res) => {
       );
     }
 
-    /* FOOTER */
-    docParagraphs.push(
-      new Paragraph({
-        spacing: { before: 240 },
-        children: [
-          new TextRun({
-            text: reportText.split("\n").slice(-5).join("\n"),
-            italics: true,
-            size: 20
-          })
-        ]
-      })
-    );
+   
 
     const doc = new Document({ sections: [{ children: docParagraphs }] });
     const docBuf =
