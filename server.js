@@ -296,6 +296,7 @@ app.post("/ask", async (req, res) => {
         docParagraphs.push(
           new Paragraph({
             children: [new TextRun({ text: labelText, bold: true, size: 24 })],
+           
             spacing: { before: 120, after: 80 },
           })
         );
@@ -307,13 +308,12 @@ app.post("/ask", async (req, res) => {
         docParagraphs.push(
           new Paragraph({
             children: [new TextRun({ text: bulletText, size: 22 })],
-            indent: { left: 680, hanging: 360 },
+            indent: { left: 720, hanging: 360 },
             spacing: { after: 60 },
           })
         );
         continue;
       }
-
       docParagraphs.push(
         new Paragraph({
           children: [new TextRun({ text: t, size: 22 })],
