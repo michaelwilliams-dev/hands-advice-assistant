@@ -1,7 +1,8 @@
 /**
  * AIVS Health & Safety Assistant · Backend (Pure JS)
- * ISO Timestamp: 2025-11-23T10:15:00Z
- * Fully corrected, Render-safe, FAISS-safe, Markdown-cleaned
+ * ISO Timestamp: 2025-11-23T12:00:00Z
+ * Clean headings, clean bullets, FAISS, PDF, Word, Email
+ * Fairness audit REMOVED exactly as requested
  */
 
 import express from "express";
@@ -23,7 +24,7 @@ app.use(cors());
 app.options("*", cors());
 
 /* --------------------------------------------------------------------- */
-/* ORIGIN SECURITY – FIXED                                               */
+/* ORIGIN SECURITY – includes your Render domain only                    */
 /* --------------------------------------------------------------------- */
 
 const allowedDomains = [
@@ -105,7 +106,7 @@ async function queryFaissIndex(question) {
 }
 
 /* --------------------------------------------------------------------- */
-/* REPORT GENERATOR                                                      */
+/* REPORT GENERATOR (Fairness REMOVED)                                  */
 /* --------------------------------------------------------------------- */
 
 async function generateHSReport(question) {
@@ -129,22 +130,10 @@ ${context}`.trim();
 
   let text = completion.choices[0].message.content.trim();
 
-  /* Fairness audit */
-  let fairness = "";
-  try {
-    const chk = await openai.chat.completions.create({
-      model: "gpt-4.1",
-      messages: [
-        { role: "system", content: "ISO 42001 fairness auditor. Identify bias." },
-        { role: "user", content: text },
-      ],
-    });
-    fairness = chk.choices[0].message.content.trim();
-  } catch {
-    fairness = "Fairness auditor unavailable";
-  }
+  /* ---------------------------------------------------------------- */
+  /*  FAIRNESS BLOCK REMOVED COMPLETELY AS REQUESTED                  */
+  /* ---------------------------------------------------------------- */
 
-  /* Footer */
   const now = new Date();
   const seed = `${String(now.getFullYear()).slice(2)}${String(
     now.getMonth() + 1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
@@ -152,7 +141,6 @@ ${context}`.trim();
 
   const footer = `
 This report was prepared using the AIVS FAISS-indexed UK Health & Safety knowledge base.
-ISO 42001 Fairness: ${fairness}
 Reg. No. AIVS/UK/${seed}-${rand}/${count}
 © AIVS Software Limited 2025`;
 
@@ -201,7 +189,7 @@ async function buildPdf({ fullName, ts, question, reportText }) {
 }
 
 /* --------------------------------------------------------------------- */
-/* /ASK ROUTE                                                             */
+/* /ASK ROUTE                                                            */
 /* --------------------------------------------------------------------- */
 
 app.post("/ask", verifyOrigin, async (req, res) => {
@@ -215,10 +203,7 @@ app.post("/ask", verifyOrigin, async (req, res) => {
     const reportText = await generateHSReport(question);
     const pdfBuf = await buildPdf({ fullName: email, ts, question, reportText });
 
-    /* ----------------------------------------------------------------- */
-    /* BUILD DOCX                                                        */
-    /* ----------------------------------------------------------------- */
-
+    /* ---------------- CLEAN MARKDOWN ---------------- */
     const cleanedText = (reportText || "")
       .replace(/\*\*/g, "")
       .replace(/\*/g, "")
@@ -228,25 +213,37 @@ app.post("/ask", verifyOrigin, async (req, res) => {
 
     const docParagraphs = [];
 
-    /* Title */
+    /* TITLE */
     docParagraphs.push(
       new Paragraph({
         alignment: "center",
         spacing: { after: 200 },
-        children: [new TextRun({ text: "HEALTH & SAFETY ASSISTANT REPORT", bold: true, size: 32 })],
+        children: [
+          new TextRun({
+            text: "HEALTH & SAFETY ASSISTANT REPORT",
+            bold: true,
+            size: 32,
+          }),
+        ],
       })
     );
 
-    /* Timestamp */
+    /* TIMESTAMP */
     docParagraphs.push(
       new Paragraph({
         alignment: "center",
         spacing: { after: 300 },
-        children: [new TextRun({ text: `Generated ${ts}`, bold: true, size: 24 })],
+        children: [
+          new TextRun({
+            text: `Generated ${ts}`,
+            bold: true,
+            size: 24,
+          }),
+        ],
       })
     );
 
-    /* Body */
+    /* BODY PARSING */
     for (const raw of lines) {
       const t = raw.trim();
       if (!t) {
@@ -254,29 +251,42 @@ app.post("/ask", verifyOrigin, async (req, res) => {
         continue;
       }
 
-      /* Main numbered headings */
+      /* MAIN HEADINGS (1., 2., 3.) */
       if (/^\d+\.\s+/.test(t)) {
         docParagraphs.push(
           new Paragraph({
             spacing: { before: 200, after: 120 },
-            children: [new TextRun({ text: t, bold: true, size: 36, color: "4e65ac" })],
+            children: [
+              new TextRun({
+                text: t,
+                bold: true,
+                size: 36,
+                color: "4e65ac",
+              }),
+            ],
           })
         );
         continue;
       }
 
-      /* Section labels */
+      /* SUBHEADINGS (e.g. Immediate Actions:) */
       if (/^[A-Z][A-Za-z\s]+:/.test(t)) {
         docParagraphs.push(
           new Paragraph({
             spacing: { before: 120, after: 80 },
-            children: [new TextRun({ text: t.replace(/:$/, ""), bold: true, size: 24 })],
+            children: [
+              new TextRun({
+                text: t.replace(/:$/, ""),
+                bold: true,
+                size: 24,
+              }),
+            ],
           })
         );
         continue;
       }
 
-      /* Bullets */
+      /* BULLETS */
       if (/^[-•]/.test(t)) {
         const bullet = t.replace(/^[-•]\s*/, "• ");
         docParagraphs.push(
@@ -289,7 +299,7 @@ app.post("/ask", verifyOrigin, async (req, res) => {
         continue;
       }
 
-      /* Normal text */
+      /* NORMAL PARAGRAPH */
       docParagraphs.push(
         new Paragraph({
           spacing: { after: 120 },
@@ -298,7 +308,7 @@ app.post("/ask", verifyOrigin, async (req, res) => {
       );
     }
 
-    /* Footer (DOCX) */
+    /* FOOTER */
     docParagraphs.push(
       new Paragraph({
         spacing: { before: 240 },
@@ -315,10 +325,7 @@ app.post("/ask", verifyOrigin, async (req, res) => {
     const doc = new Document({ sections: [{ children: docParagraphs }] });
     const docBuf = await Packer.toBuffer(doc);
 
-    /* ----------------------------------------------------------------- */
-    /* EMAIL SEND                                                        */
-    /* ----------------------------------------------------------------- */
-
+    /* ---------------- EMAIL SEND ---------------- */
     await fetch("https://api.mailjet.com/v3.1/send", {
       method: "POST",
       headers: {
@@ -366,7 +373,7 @@ app.post("/ask", verifyOrigin, async (req, res) => {
 });
 
 /* --------------------------------------------------------------------- */
-/* FRONTEND                                                              */
+/* FRONTEND ROUTE                                                        */
 /* --------------------------------------------------------------------- */
 
 app.get("/", (req, res) =>
