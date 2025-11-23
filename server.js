@@ -1,7 +1,8 @@
 /**
  * AIVS Health & Safety Assistant · Backend (Pure JS)
- * ISO Timestamp: 2025-11-23T14:00:00Z
- * Fully corrected: headings, FAISS, PDF, DOCX, email, no fairness, no markdown
+ * ISO Timestamp: 2025-11-23T15:00:00Z
+ * Clean headings, clean bullets, FAISS, PDF, Word, Email
+ * Fairness audit removed; heading logic aligned with Accountant Assistant PRO
  */
 
 import express from "express";
@@ -51,7 +52,7 @@ function verifyOrigin(req, res, next) {
 }
 
 /* --------------------------------------------------------------------- */
-/* PATH + SERVER                                                         */
+/* PATHS + SERVER                                                        */
 /* --------------------------------------------------------------------- */
 
 const PORT = process.env.PORT || 10000;
@@ -105,7 +106,7 @@ async function queryFaissIndex(question) {
 }
 
 /* --------------------------------------------------------------------- */
-/* REPORT GENERATOR (Fairness Removed)                                  */
+/* REPORT GENERATOR (ACCOUNTING-STYLE STRUCTURE)                         */
 /* --------------------------------------------------------------------- */
 
 async function generateHSReport(question) {
@@ -113,9 +114,20 @@ async function generateHSReport(question) {
   const context = joined.slice(0, 50000);
 
   const prompt = `
-You are a qualified UK health & safety consultant preparing a structured compliance report.
-Use HSE guidance, RIDDOR 2013, CDM 2015, COSHH, Workplace Regulations 1992.
-Write in formal UK English. No markdown (**text**).
+You are a qualified UK health & safety consultant preparing a structured internal compliance report.
+Use HSE guidance, RIDDOR 2013, CDM 2015, COSHH, and the Workplace (Health, Safety and Welfare) Regulations.
+
+Write in clear, formal UK English.
+Do NOT use Markdown (**text**, ### headings, bullet syntax).
+Use numbered sections following this structure:
+
+1. Context
+2. Immediate actions
+3. Evidence and investigation
+4. Risk assessment and controls
+5. Documentation and reporting (including RIDDOR where relevant)
+6. Follow-up actions and monitoring
+7. Key references and guidance
 
 Question: "${question}"
 
@@ -131,7 +143,8 @@ ${context}`.trim();
 
   const now = new Date();
   const seed = `${String(now.getFullYear()).slice(2)}${String(
-    now.getMonth() + 1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
+    now.getMonth() + 1
+  ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
   const rand = Math.floor(1000 + Math.random() * 9000);
 
   const footer = `
@@ -197,13 +210,15 @@ app.post("/ask", verifyOrigin, async (req, res) => {
     const reportText = await generateHSReport(question);
     const pdfBuf = await buildPdf({ fullName: email, ts, question, reportText });
 
-    /* CLEAN MARKDOWN */
+    /* CLEAN MARKDOWN (safety) */
     const cleanedText = (reportText || "")
       .replace(/\*\*/g, "")
       .replace(/\*/g, "")
       .replace(/^#+\s*/gm, "");
 
-    const lines = cleanedText.split("\n");
+    const lines = cleanedText
+      .replace(/\n{2,}/g, "\n")
+      .split(/\n| {2,}/);
 
     const docParagraphs = [];
 
@@ -212,7 +227,13 @@ app.post("/ask", verifyOrigin, async (req, res) => {
       new Paragraph({
         alignment: "center",
         spacing: { after: 200 },
-        children: [new TextRun({ text: "HEALTH & SAFETY ASSISTANT REPORT", bold: true, size: 32 })],
+        children: [
+          new TextRun({
+            text: "HEALTH & SAFETY ASSISTANT REPORT",
+            bold: true,
+            size: 32
+          })
+        ]
       })
     );
 
@@ -221,46 +242,54 @@ app.post("/ask", verifyOrigin, async (req, res) => {
       new Paragraph({
         alignment: "center",
         spacing: { after: 300 },
-        children: [new TextRun({ text: `Generated ${ts}`, bold: true, size: 24 })],
+        children: [
+          new TextRun({
+            text: `Generated ${ts}`,
+            bold: true,
+            size: 24
+          })
+        ]
       })
     );
 
-    /* BODY LOOP */
+    /* BODY PARSING – MIRRORING ACCOUNTANT LOGIC, WITH 28PT HEADINGS */
     for (const raw of lines) {
-      const t = raw.trim();
+      let t = raw.trim();
       if (!t) {
         docParagraphs.push(new Paragraph(""));
         continue;
       }
 
-      /* MAIN HEADINGS (1., 2., 3.) */
+      /* MAIN SECTION HEADINGS e.g. "1. Context" */
       if (/^\d+\.\s+/.test(t)) {
         docParagraphs.push(
           new Paragraph({
             spacing: { before: 200, after: 120 },
-            children: [new TextRun({ text: t, bold: true, size: 36, color: "4e65ac" })],
+            children: [
+              new TextRun({
+                text: t,
+                bold: true,
+                size: 28,       // ← at least 28, as requested
+                color: "4e65ac"
+              })
+            ]
           })
         );
         continue;
       }
 
-      /* TOP-LEVEL HEADINGS (e.g. Context, Compliance Report...) */
-      if (/^[A-Z][A-Za-z\s\-]+$/.test(t)) {
-        docParagraphs.push(
-          new Paragraph({
-            spacing: { before: 200, after: 120 },
-            children: [new TextRun({ text: t, bold: true, size: 32, color: "4e65ac" })],
-          })
-        );
-        continue;
-      }
-
-      /* SUBHEADINGS (Immediate Actions:, Investigation:) */
-      if (/^[A-Z][A-Za-z\s]+:?$/.test(t)) {
+      /* UPPERCASE SUBHEADINGS (RARE – e.g. "FURTHER ACTIONS:") */
+      if (/^[A-Z][A-Za-z\s]+:$/.test(t)) {
         docParagraphs.push(
           new Paragraph({
             spacing: { before: 120, after: 80 },
-            children: [new TextRun({ text: t.replace(/:$/, ""), bold: true, size: 24, color: "4e65ac" })],
+            children: [
+              new TextRun({
+                text: t.replace(/:$/, ""),
+                bold: true,
+                size: 24
+              })
+            ]
           })
         );
         continue;
@@ -268,12 +297,12 @@ app.post("/ask", verifyOrigin, async (req, res) => {
 
       /* BULLETS */
       if (/^[-•]/.test(t)) {
-        const bullet = t.replace(/^[-•]\s*/, "• ");
+        const bulletText = t.replace(/^[-•]\s*/, "• ");
         docParagraphs.push(
           new Paragraph({
             spacing: { after: 60 },
-            indent: { left: 720, hanging: 360 },
-            children: [new TextRun({ text: bullet, size: 22 })],
+            indent: { left: 680, hanging: 360 },
+            children: [new TextRun({ text: bulletText, size: 22 })]
           })
         );
         continue;
@@ -283,7 +312,7 @@ app.post("/ask", verifyOrigin, async (req, res) => {
       docParagraphs.push(
         new Paragraph({
           spacing: { after: 120 },
-          children: [new TextRun({ text: t, size: 22 })],
+          children: [new TextRun({ text: t, size: 22 })]
         })
       );
     }
@@ -296,9 +325,9 @@ app.post("/ask", verifyOrigin, async (req, res) => {
           new TextRun({
             text: reportText.split("\n").slice(-5).join("\n"),
             italics: true,
-            size: 20,
-          }),
-        ],
+            size: 20
+          })
+        ]
       })
     );
 
@@ -314,7 +343,7 @@ app.post("/ask", verifyOrigin, async (req, res) => {
           Buffer.from(
             `${process.env.MJ_APIKEY_PUBLIC}:${process.env.MJ_APIKEY_PRIVATE}`
           ).toString("base64"),
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         Messages: [
@@ -323,7 +352,7 @@ app.post("/ask", verifyOrigin, async (req, res) => {
             To: [
               email && { Email: email },
               managerEmail && { Email: managerEmail },
-              clientEmail && { Email: clientEmail },
+              clientEmail && { Email: clientEmail }
             ].filter(Boolean),
             Subject: "Your Health & Safety Report",
             TextPart: reportText,
@@ -331,18 +360,18 @@ app.post("/ask", verifyOrigin, async (req, res) => {
               {
                 ContentType: "application/pdf",
                 Filename: `hs-${ts}.pdf`,
-                Base64Content: pdfBuf.toString("base64"),
+                Base64Content: pdfBuf.toString("base64")
               },
               {
                 ContentType:
                   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 Filename: `hs-${ts}.docx`,
-                Base64Content: docBuf.toString("base64"),
-              },
-            ],
-          },
-        ],
-      }),
+                Base64Content: docBuf.toString("base64")
+              }
+            ]
+          }
+        ]
+      })
     });
 
     res.json({ question, answer: reportText, timestamp: ts });
