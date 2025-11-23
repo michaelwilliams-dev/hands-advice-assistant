@@ -25,8 +25,7 @@ app.options("*", cors());
 /* ---------------------- ORIGIN SECURITY ----------------------- */
 const allowedDomains = [
   "assistants.aivs.uk",
-  "hands-advice-assistant-1.onrender.com",
-  "health-safety-assistant.onrender.com"
+  "hands-advice-assistant-1.onrender.com"
 ];
 
 function verifyOrigin(req, res, next) {
