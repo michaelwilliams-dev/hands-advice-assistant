@@ -219,8 +219,8 @@ app.post("/ask", verifyOrigin, async (req, res) => {
       .replace(/^#+\s*/gm, "");
 
     const lines = cleanedText
-      .replace(/\n{2,}/g, "\n")
-      .split(/\n| {2,}/);
+      .replace(/\n{2,}/g, "\n")   // collapse double newlines → single
+      .split(/\n/);
 
     const docParagraphs = [];
 
