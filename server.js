@@ -246,6 +246,11 @@ app.post("/ask", async (req, res) => {
         spacing: { after: 300 },
       })
     );
+    // CLEAN MARKDOWN BEFORE ANY PROCESSING
+    const cleanedText = (reportText || "")
+      .replace(/\*\*/g, "")      // remove **bold**
+      .replace(/\*/g, "")        // remove stray *
+      .replace(/^#+\s*/gm, "");  // remove ### headings
 
     const lines = cleanedText
       .replace(/\n{2,}/g, "\n")
