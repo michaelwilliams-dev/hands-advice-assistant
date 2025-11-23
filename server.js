@@ -273,7 +273,7 @@ app.post("/ask", async (req, res) => {
               new TextRun({
                 text: t,
                 bold: true,
-                size: 36,       // 18pt
+                size: 24,       // 18pt
                 color: "4e65ac" // AIVS blue
               })
             ],
