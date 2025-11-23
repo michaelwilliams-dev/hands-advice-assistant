@@ -151,10 +151,8 @@ This report was prepared using the AIVS FAISS-indexed UK Health & Safety knowled
 It is provided for internal guidance only and must not be relied upon as a substitute for legal,  
 regulatory, or professional safety advice. All statutory duties under UK Health & Safety  
 legislation remain the responsibility of the organisation at all times.
-
 Reg. No. AIVS/UK/${seed}-${rand}/${count}
-© AIVS Software Limited 2025`;
-
+©AIVS Software Limited 2025`;
   return `${text}\n\n${footer}`;
 }
 
