@@ -1,3 +1,4 @@
+
 /**
  * AIVS Health & Safety Assistant · Backend (Pure JS)
  * ISO Timestamp: 2025-11-23T12:00:00Z
@@ -278,7 +279,7 @@ app.post("/ask", verifyOrigin, async (req, res) => {
               new TextRun({
                 text: t.replace(/:$/, ""),
                 bold: true,
-                size: 28,
+                size: 26,
                 color: "4e65ac"
               }),
             ],
