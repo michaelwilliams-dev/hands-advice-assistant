@@ -247,7 +247,7 @@ app.post("/ask", async (req, res) => {
       })
     );
 
-    const lines = String(reportText || "")
+    const lines = cleanedText
       .replace(/\n{2,}/g, "\n")
       .split(/\n| {2,}/);
 
@@ -260,43 +260,30 @@ app.post("/ask", async (req, res) => {
       if (t.startsWith("This report was prepared using")) break;
 
 
-      if (/^\*{0,3}\s*\d+[\.)]\s/.test(t)) {
-        // Strip leading and trailing asterisks from markdown headings like **1. Heading**
-        const cleanHeading = t.replace(/^\*+/, "").replace(/\*+$/, "").trim();
-      
+      // SECTION HEADINGS (same logic as Accounting)
+      if (/^\d+\.\s+/.test(t)) {
         docParagraphs.push(
           new Paragraph({
             children: [
               new TextRun({
-                text: cleanHeading, // ← use cleaned text
+                text: t,
                 bold: true,
-                size: 36,           // 18pt
-                color: "4e65ac",
-              }),
+                size: 36,       // 18pt
+                color: "4e65ac" // AIVS blue
+              })
             ],
-            spacing: { before: 200, after: 120 },
+            spacing: { before: 200, after: 120 }
           })
         );
         continue;
       }
 
-      if (/^\**\d+[\.)]\s/.test(t)) {
-        const cleaned = t.replace(/^[A-Z][\).\s]+/, "").trim();
-        docParagraphs.push(
-          new Paragraph({
-            children: [new TextRun({ text: cleaned, bold: true, size: 24 })],
-            spacing: { before: 120, after: 80 },
-          })
-        );
-        continue;
-      }
 
       if (/^[-•]?\s*[A-Z].*:\s*$/.test(t)) {
         const labelText = t.replace(/^[-•]\s*/, "").trim();
         docParagraphs.push(
           new Paragraph({
             children: [new TextRun({ text: labelText, bold: true, size: 24 })],
-           
             spacing: { before: 120, after: 80 },
           })
         );
@@ -314,6 +301,7 @@ app.post("/ask", async (req, res) => {
         );
         continue;
       }
+
       docParagraphs.push(
         new Paragraph({
           children: [new TextRun({ text: t, size: 22 })],
