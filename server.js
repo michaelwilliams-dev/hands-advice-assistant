@@ -277,7 +277,7 @@ app.post("/ask", async (req, res) => {
         continue;
       }
 
-      if (/^[A-Z][\).\s]/.test(t)) {
+      if (/^[A-Z][\.)]\s/.test(t)) {
         const cleaned = t.replace(/^[A-Z][\).\s]+/, "").trim();
         docParagraphs.push(
           new Paragraph({
