@@ -278,7 +278,8 @@ app.post("/ask", verifyOrigin, async (req, res) => {
               new TextRun({
                 text: t.replace(/:$/, ""),
                 bold: true,
-                size: 24,
+                size: 28,
+                color: "4e65ac"
               }),
             ],
           })
