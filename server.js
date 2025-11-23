@@ -148,7 +148,9 @@ ${context}`.trim();
   const rand = Math.floor(1000 + Math.random() * 9000);
 
   const footer = `
-This report was prepared using the AIVS FAISS-indexed UK Health & Safety knowledge base.
+This report was prepared using the AIVS FAISS-indexed UK Health & Safety knowledge base. 
+It is for internal guidance only and must not be treated as legal, regulatory, or professional safety advice. 
+Any decisions taken remain the responsibility of the organisation, and all statutory duties under UK Health & Safety legislation continue to appl
 Reg. No. AIVS/UK/${seed}-${rand}/${count}
 © AIVS Software Limited 2025`;
 
