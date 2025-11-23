@@ -261,17 +261,20 @@ app.post("/ask", async (req, res) => {
 
 
       if (/^\*{0,3}\s*\d+[\.)]\s/.test(t)) {
+        // Strip leading and trailing asterisks from markdown headings like **1. Heading**
+        const cleanHeading = t.replace(/^\*+/, "").replace(/\*+$/, "").trim();
+      
         docParagraphs.push(
           new Paragraph({
             children: [
               new TextRun({
-                text: t,
+                text: cleanHeading, // ← use cleaned text
                 bold: true,
-                size: 36,      // 18pt
-                color: "4e65ac"
-              })
+                size: 36,           // 18pt
+                color: "4e65ac",
+              }),
             ],
-            spacing: { before: 200, after: 120 }
+            spacing: { before: 200, after: 120 },
           })
         );
         continue;
