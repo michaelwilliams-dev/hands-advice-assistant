@@ -259,11 +259,19 @@ app.post("/ask", async (req, res) => {
       }
       if (t.startsWith("This report was prepared using")) break;
 
+
       if (/^\d+[\).\s]/.test(t)) {
         docParagraphs.push(
           new Paragraph({
-            children: [new TextRun({ text: t, bold: true, size: 28 })],
-            spacing: { before: 200, after: 120 },
+            children: [
+              new TextRun({
+                text: t,
+                bold: true,
+                size: 36,      // 18pt
+                color: "4e65ac"
+              })
+            ],
+            spacing: { before: 200, after: 120 }
           })
         );
         continue;
