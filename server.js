@@ -260,7 +260,7 @@ app.post("/ask", async (req, res) => {
       if (t.startsWith("This report was prepared using")) break;
 
 
-      if (/^\d+[\).\s]/.test(t)) {
+      if (/^\*{0,3}\s*\d+[\.)]\s/.test(t)) {
         docParagraphs.push(
           new Paragraph({
             children: [
@@ -277,7 +277,7 @@ app.post("/ask", async (req, res) => {
         continue;
       }
 
-      if (/^[A-Z][\.)]\s/.test(t)) {
+      if (/^\**\d+[\.)]\s/.test(t)) {
         const cleaned = t.replace(/^[A-Z][\).\s]+/, "").trim();
         docParagraphs.push(
           new Paragraph({
