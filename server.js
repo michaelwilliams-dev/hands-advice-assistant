@@ -1,7 +1,7 @@
 /**
  * AIVS Health & Safety Assistant · Backend (Pure JS)
- * ISO Timestamp: 2025-11-23T09:30:00Z
- * Fully aligned with Accountant Assistant PRO backend structure
+ * ISO Timestamp: 2025-11-23T10:15:00Z
+ * Fully corrected, Render-safe, FAISS-safe, Markdown-cleaned
  */
 
 import express from "express";
@@ -22,7 +22,10 @@ const app = express();
 app.use(cors());
 app.options("*", cors());
 
-/* ---------------------- ORIGIN SECURITY ----------------------- */
+/* --------------------------------------------------------------------- */
+/* ORIGIN SECURITY – FIXED                                               */
+/* --------------------------------------------------------------------- */
+
 const allowedDomains = [
   "assistants.aivs.uk",
   "hands-advice-assistant-1.onrender.com"
@@ -30,12 +33,13 @@ const allowedDomains = [
 
 function verifyOrigin(req, res, next) {
   const origin = req.get("Origin");
-  if (!origin) return res.status(403).json({ error: "Forbidden – no Origin header" });
+  if (!origin)
+    return res.status(403).json({ error: "Forbidden – no Origin header" });
 
   try {
     const { hostname } = new URL(origin);
     const allowed = allowedDomains.some(
-      (d) => hostname === d || hostname.endsWith(`.${d}`)
+      (d) => hostname === d || hostname.endsWith("." + d)
     );
     if (!allowed)
       return res.status(403).json({ error: "Forbidden – Origin not allowed", origin });
@@ -46,8 +50,11 @@ function verifyOrigin(req, res, next) {
   }
 }
 
-/* ---------------------- PATH & APP SETUP ---------------------- */
-const PORT = process.env.PORT || 3002;
+/* --------------------------------------------------------------------- */
+/* PATHS                                                                 */
+/* --------------------------------------------------------------------- */
+
+const PORT = process.env.PORT || 10000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -56,8 +63,12 @@ app.use(bodyParser.json());
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-/* ---------------------- FAISS PRELOAD ------------------------- */
+/* --------------------------------------------------------------------- */
+/* PRELOAD FAISS INDEX                                                   */
+/* --------------------------------------------------------------------- */
+
 let globalIndex = null;
+
 (async () => {
   try {
     console.log("📦 Preloading H&S FAISS index...");
@@ -68,10 +79,18 @@ let globalIndex = null;
   }
 })();
 
-/* ---------------------- FAISS SEARCH --------------------------- */
+/* --------------------------------------------------------------------- */
+/* FAISS SEARCH                                                          */
+/* --------------------------------------------------------------------- */
+
 async function queryFaissIndex(question) {
   try {
-    const index = globalIndex || (await loadIndex(10000));
+    const index = globalIndex || [];
+    if (!index.length) {
+      console.error("❌ GlobalIndex not ready — still loading or empty");
+      return { joined: "", count: 0 };
+    }
+
     const matches = await searchIndex(question, index);
     const filtered = matches.filter((m) => m.score >= 0.03);
 
@@ -85,17 +104,20 @@ async function queryFaissIndex(question) {
   }
 }
 
-/* ---------------------- REPORT GENERATOR ------------------------ */
-async function generateHSReport(query) {
-  const { joined, count } = await queryFaissIndex(query);
+/* --------------------------------------------------------------------- */
+/* REPORT GENERATOR                                                      */
+/* --------------------------------------------------------------------- */
+
+async function generateHSReport(question) {
+  const { joined, count } = await queryFaissIndex(question);
   const context = joined.slice(0, 50000);
 
   const prompt = `
 You are a qualified UK health & safety consultant preparing a structured compliance report.
 Use HSE guidance, RIDDOR 2013, CDM 2015, COSHH, Workplace Regulations 1992.
-Write in formal UK English. No markdown. Use plain section headings.
+Write in formal UK English. No markdown (**text**).
 
-Question: "${query}"
+Question: "${question}"
 
 Context:
 ${context}`.trim();
@@ -107,29 +129,25 @@ ${context}`.trim();
 
   let text = completion.choices[0].message.content.trim();
 
-  /* ------- FAIRNESS CHECK -------- */
+  /* Fairness audit */
   let fairness = "";
   try {
     const chk = await openai.chat.completions.create({
       model: "gpt-4.1",
       messages: [
-        {
-          role: "system",
-          content: "ISO 42001 fairness auditor. Identify any bias.",
-        },
+        { role: "system", content: "ISO 42001 fairness auditor. Identify bias." },
         { role: "user", content: text },
       ],
     });
     fairness = chk.choices[0].message.content.trim();
   } catch {
-    fairness = "Fairness audit unavailable";
+    fairness = "Fairness auditor unavailable";
   }
 
-  /* ------- FOOTER -------- */
+  /* Footer */
   const now = new Date();
   const seed = `${String(now.getFullYear()).slice(2)}${String(
-    now.getMonth() + 1
-  ).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+    now.getMonth() + 1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
   const rand = Math.floor(1000 + Math.random() * 9000);
 
   const footer = `
@@ -141,9 +159,12 @@ Reg. No. AIVS/UK/${seed}-${rand}/${count}
   return `${text}\n\n${footer}`;
 }
 
-/* ---------------------- PDF BUILDER ---------------------------- */
+/* --------------------------------------------------------------------- */
+/* PDF BUILDER                                                           */
+/* --------------------------------------------------------------------- */
+
 function sanitizeForPdf(txt = "") {
-  return String(txt).replace(/[^\x09\x0A\x0D\x20-\x7E£–—]/g, "").trim();
+  return String(txt).replace(/[^\x09\x0A\x0D\x20-\x7E£–—]/g, "");
 }
 
 async function buildPdf({ fullName, ts, question, reportText }) {
@@ -154,97 +175,78 @@ async function buildPdf({ fullName, ts, question, reportText }) {
   const fontBody = await pdfDoc.embedStandardFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedStandardFont(StandardFonts.HelveticaBold);
 
-  const margin = 50;
-  const fsTitle = 16;
-  const fsBody = 11;
-  const lh = fsBody * 1.4;
+  let y = height - 50;
 
   const draw = (txt, x, y, size, font) =>
-    page.drawText(txt || "", { x, y, size, font });
+    page.drawText(String(txt || ""), { x, y, size, font });
 
-  let y = height - margin;
+  draw("Health & Safety Assistant Report", 50, y, 16, fontBold);
+  y -= 20;
+  draw(`Prepared for: ${fullName || "N/A"}`, 50, y, 11, fontBody);
+  y -= 14;
+  draw(`Timestamp: ${ts}`, 50, y, 11, fontBody);
+  y -= 20;
 
-  const ensure = () => {
-    if (y < margin * 2) {
+  for (const line of sanitizeForPdf(reportText).split("\n")) {
+    if (y < 60) {
       page = pdfDoc.addPage();
       ({ width, height } = page.getSize());
-      y = height - margin;
+      y = height - 50;
     }
-  };
-
-  draw("Health & Safety Assistant Report", margin, y, fsTitle, fontBold);
-  y -= 20;
-  draw(`Prepared for: ${fullName || "N/A"}`, margin, y, fsBody, fontBody);
-  y -= 14;
-  draw(`Timestamp: ${ts}`, margin, y, fsBody, fontBody);
-  y -= 20;
-
-  sanitizeForPdf(reportText)
-    .split("\n")
-    .forEach((line) => {
-      ensure();
-      draw(line, margin, y, fsBody, fontBody);
-      y -= lh;
-    });
+    draw(line, 50, y, 11, fontBody);
+    y -= 14;
+  }
 
   return Buffer.from(await pdfDoc.save());
 }
 
-/* ---------------------- /ask ROUTE ------------------------------ */
+/* --------------------------------------------------------------------- */
+/* /ASK ROUTE                                                             */
+/* --------------------------------------------------------------------- */
+
 app.post("/ask", verifyOrigin, async (req, res) => {
   const { question, email, managerEmail, clientEmail } = req.body;
-  if (!question) return res.status(400).json({ error: "Missing question" });
+
+  if (!question)
+    return res.status(400).json({ error: "Missing question" });
 
   try {
     const ts = new Date().toISOString();
     const reportText = await generateHSReport(question);
-    const pdfBuf = await buildPdf({
-      fullName: email,
-      ts,
-      question,
-      reportText,
-    });
+    const pdfBuf = await buildPdf({ fullName: email, ts, question, reportText });
 
-    /* ---------------- DOCX BUILD ---------------- */
-    const docParagraphs = [];
+    /* ----------------------------------------------------------------- */
+    /* BUILD DOCX                                                        */
+    /* ----------------------------------------------------------------- */
 
-    /* MAIN TITLE */
-    docParagraphs.push(
-      new Paragraph({
-        alignment: "center",
-        spacing: { after: 200 },
-        children: [
-          new TextRun({
-            text: "HEALTH & SAFETY ASSISTANT REPORT",
-            bold: true,
-            size: 32,
-          }),
-        ],
-      })
-    );
-
-    /* TIMESTAMP */
-    docParagraphs.push(
-      new Paragraph({
-        alignment: "center",
-        spacing: { after: 300 },
-        children: [
-          new TextRun({
-            text: `Generated ${ts}`,
-            bold: true,
-            size: 24,
-          }),
-        ],
-      })
-    );
-
-    /* CLEAN MARKDOWN */
     const cleanedText = (reportText || "")
-      .replace(/\*+/g, "")
+      .replace(/\*\*/g, "")
+      .replace(/\*/g, "")
       .replace(/^#+\s*/gm, "");
 
     const lines = cleanedText.split("\n");
 
+    const docParagraphs = [];
+
+    /* Title */
+    docParagraphs.push(
+      new Paragraph({
+        alignment: "center",
+        spacing: { after: 200 },
+        children: [new TextRun({ text: "HEALTH & SAFETY ASSISTANT REPORT", bold: true, size: 32 })],
+      })
+    );
+
+    /* Timestamp */
+    docParagraphs.push(
+      new Paragraph({
+        alignment: "center",
+        spacing: { after: 300 },
+        children: [new TextRun({ text: `Generated ${ts}`, bold: true, size: 24 })],
+      })
+    );
+
+    /* Body */
     for (const raw of lines) {
       const t = raw.trim();
       if (!t) {
@@ -252,43 +254,29 @@ app.post("/ask", verifyOrigin, async (req, res) => {
         continue;
       }
 
-      /* MAIN SECTION HEADINGS (1., 2., 3.) */
+      /* Main numbered headings */
       if (/^\d+\.\s+/.test(t)) {
         docParagraphs.push(
           new Paragraph({
             spacing: { before: 200, after: 120 },
-            children: [
-              new TextRun({
-                text: t,
-                bold: true,
-                size: 36,
-                color: "4e65ac",
-              }),
-            ],
+            children: [new TextRun({ text: t, bold: true, size: 36, color: "4e65ac" })],
           })
         );
         continue;
       }
 
-      /* LABEL HEADINGS (e.g. Immediate Actions:) */
+      /* Section labels */
       if (/^[A-Z][A-Za-z\s]+:/.test(t)) {
         docParagraphs.push(
           new Paragraph({
             spacing: { before: 120, after: 80 },
-            children: [
-              new TextRun({
-                text: t.replace(/:$/, ""),
-                bold: true,
-                size: 24,
-                color: "000000",
-              }),
-            ],
+            children: [new TextRun({ text: t.replace(/:$/, ""), bold: true, size: 24 })],
           })
         );
         continue;
       }
 
-      /* BULLETS */
+      /* Bullets */
       if (/^[-•]/.test(t)) {
         const bullet = t.replace(/^[-•]\s*/, "• ");
         docParagraphs.push(
@@ -301,7 +289,7 @@ app.post("/ask", verifyOrigin, async (req, res) => {
         continue;
       }
 
-      /* NORMAL PARAGRAPHS */
+      /* Normal text */
       docParagraphs.push(
         new Paragraph({
           spacing: { after: 120 },
@@ -310,13 +298,13 @@ app.post("/ask", verifyOrigin, async (req, res) => {
       );
     }
 
-    /* FOOTER */
+    /* Footer (DOCX) */
     docParagraphs.push(
       new Paragraph({
         spacing: { before: 240 },
         children: [
           new TextRun({
-            text: reportText.split("\n").slice(-6).join("\n"),
+            text: reportText.split("\n").slice(-5).join("\n"),
             italics: true,
             size: 20,
           }),
@@ -327,7 +315,10 @@ app.post("/ask", verifyOrigin, async (req, res) => {
     const doc = new Document({ sections: [{ children: docParagraphs }] });
     const docBuf = await Packer.toBuffer(doc);
 
-    /* EMAIL SEND */
+    /* ----------------------------------------------------------------- */
+    /* EMAIL SEND                                                        */
+    /* ----------------------------------------------------------------- */
+
     await fetch("https://api.mailjet.com/v3.1/send", {
       method: "POST",
       headers: {
@@ -374,12 +365,18 @@ app.post("/ask", verifyOrigin, async (req, res) => {
   }
 });
 
-/* ---------------------- FRONTEND ROUTE ----------------------- */
+/* --------------------------------------------------------------------- */
+/* FRONTEND                                                              */
+/* --------------------------------------------------------------------- */
+
 app.get("/", (req, res) =>
   res.sendFile(path.join(__dirname, "public", "health_safety.html"))
 );
 
-/* ---------------------- SERVER START ------------------------- */
+/* --------------------------------------------------------------------- */
+/* SERVER START                                                          */
+/* --------------------------------------------------------------------- */
+
 app.listen(PORT, "0.0.0.0", () =>
   console.log(`🟢 Health & Safety Assistant running on port ${PORT}`)
 );
