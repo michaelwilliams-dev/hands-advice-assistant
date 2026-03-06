@@ -1,28 +1,68 @@
-<!-- ISO Timestamp: 2025-11-16T09:30:00Z -->
+<!--health_safety.html -->
+<!-- ISO Timestamp: 2025-03-06T14:30:00Z -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Health & Safety Assistant</title>
+  <title>Health & Safety Advisor</title>
   <link rel="stylesheet" href="style.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f7f9fc;
+      background-color: #f1f2ee;
       padding: 40px;
       max-width: 700px;
       margin: auto;
-      color: #333;
+      color: #0b1f2a;
     }
 
-    h2 { text-align: center; color: #4e65ac; }
+    .top-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    #page-iso,
+    .iso-pill {
+      font-size: 0.85rem;
+      color: #415a67;
+      background: #e6e7e2;
+      border: 1px solid #d9dad5;
+      padding: 6px 10px;
+      display: inline-block;
+      border-radius: 0;
+      font-weight: 600;
+    }
+
+    .iso-note {
+      font-size: 0.95rem;
+      color: #415a67;
+      text-align: center;
+      line-height: 1.5;
+      margin-top: 0;
+      margin-bottom: 14px;
+    }
+
+    h2 { 
+      text-align: center; 
+      color: #111111; 
+    }
+
+    h3 {
+      text-align: center;
+      color: #111111;
+    }
     
     label {
       font-weight: bold;
       margin-top: 10px;
       display: block;
+      color: #111111;
     }
 
     input, textarea, button {
@@ -34,57 +74,70 @@
       box-sizing: border-box;
     }
 
+    input,
+    textarea {
+      border: 1px solid #0b1f2a;
+      border-left: 4px solid #ff6a00;
+      border-radius: 0;
+      background: #ffffff;
+      color: #0b1f2a;
+    }
+
     textarea { 
       resize: vertical; 
       min-height: 100px; 
     }
 
     button {
-      background-color: #4e65ac;
+      background-color: #14232b;
       color: white;
       border: none;
-      border-radius: 6px;
+      border-radius: 0;
       cursor: pointer;
       font-size: 1rem;
     }
 
-    button:hover { background-color: #3c5093; }
+    button:hover { 
+      background-color: #0b1f2a; 
+    }
 
     /* -------------------------------------------------
        REPORT OUTPUT AREA (UPDATED TO ARIAL)
     ------------------------------------------------- */
     pre {
-      background: #f4f4f4;
+      background: #ffffff;
       padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
+      border: 1px solid #d9dad5;
+      border-left: 4px solid #ff6a00;
+      border-radius: 0;
       white-space: pre-wrap;
-      font-family: Arial, Helvetica, sans-serif;   /* ← Force Arial */
-      font-size: 15px;                             /* ← Smooth reading */
-      line-height: 1.55;                           /* ← Accounting style */
-      color: #222;                                 /* ← Darker text */
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+      color: #0b1f2a;
     }
 
     .terms-box {
       font-size: 14px;
       margin-top: 15px;
       margin-bottom: 10px;
+      color: #0b1f2a;
     }
 
     .terms-box a { 
-      color: #4e65ac; 
+      color: #ff6a00; 
       text-decoration: underline; 
     }
 
     #response strong {
       font-weight: bold;
-      color: #4e65ac;
+      color: #111111;
     }
 
     #indexTimestamp, #budgetNotice {
       text-align: right;
       font-size: 0.9em;
-      color: #666;
+      color: #415a67;
     }
 
     #indexTimestamp { margin-top: -5px; }
@@ -92,30 +145,37 @@
 
     /* --- Clear button -------------------------------------------- */
     #clearResultsBtn {
-      background:#4e65ac;
-      color:#fff;
-      border:none;
-      border-radius:0;
-      padding:14px 28px;
-      font-size:17px;
-      font-weight:700;
-      cursor:pointer;
-      margin:25px 0 15px auto;
-      display:none;
+      background: #14232b;
+      color: #fff;
+      border: none;
+      border-radius: 0;
+      padding: 14px 28px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      margin: 25px 0 15px auto;
+      display: none;
     }
-    #clearResultsBtn:hover { background:#3c5399; }
+
+    #clearResultsBtn:hover { 
+      background: #0b1f2a; 
+    }
 
   </style>
 </head>
 
 <body>
 
-  <!-- Visible ISO timestamp at top -->
-  <p style="text-align:right; font-size:0.9rem; color:#666;">
-    🕒 ISO Timestamp: <span id="iso-timestamp"></span>
-  </p>
+  <div class="top-meta">
+    <div id="page-iso">🕒 ISO Timestamp: <span id="iso-timestamp"></span></div>
+    <div class="iso-pill">ISO/IEC 42001</div>
+  </div>
 
   <h2>Health & Safety Assistant</h2>
+
+  <p class="iso-note">
+    Operated within AIVS Software Limited’s ISO/IEC 42001-certified AI management system.
+  </p>
 
   <div id="indexTimestamp">🗂️ Databank Last Updated: 2025-10-20T11:30:00Z</div>
 
